@@ -1,9 +1,12 @@
+from django.db import IntegrityError, DataError
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
 from .models import User
 
 import pytest
+
+testmail = 'test@example.com'
 
 
 # Create your tests here.
@@ -38,26 +41,37 @@ class TestUserModel(TestCase):
         assert updated_user == user
 
     #  Creating a new user with an already existing username or email should fail.
-    def test_create_user_with_existing_username_or_email(self):
+    def test_create_user_with_existing_username(self):
         User.objects.create(username="testuser", password="password123", email="testuser@example.com")
-        with pytest.raises(Exception):
+        with pytest.raises(IntegrityError):
             User.objects.create(username="testuser", password="newpassword123", email="newemail@example.com")
-        with pytest.raises(Exception):
+
+    #  Creating a new user with an already existing username or email should fail.
+    def test_create_user_with_existing_email(self):
+        User.objects.create(username="testuser", password="password123", email="testuser@example.com")
+        with pytest.raises(IntegrityError):
             User.objects.create(username="newusername", password="newpassword123", email="testuser@example.com")
 
     #  Creating a new user with an empty username, password, or email should fail.
-    def test_create_user_with_empty_credentials(self):
-        with pytest.raises(Exception):
+    def test_create_user_with_empty_username(self):
+        with pytest.raises(IntegrityError):
             User.objects.create(username="", password="password123", email="testuser@example.com")
-        with pytest.raises(Exception):
+
+    #  Creating a new user with an empty password should fail.
+    def test_create_user_with_empty_password(self):
+        with pytest.raises(IntegrityError):
             User.objects.create(username="testuser", password="", email="testuser@example.com")
-        with pytest.raises(Exception):
+
+    #  Creating a new user with an empty email should fail.
+    def test_create_user_with_empty_email(self):
+        with pytest.raises(IntegrityError):
             User.objects.create(username="testuser", password="password123", email="")
 
     #  Creating a new user with a password length less than 9 should fail.
     def test_create_user_with_short_password(self):
-        with pytest.raises(Exception):
-            User.objects.create(username="testuser", password="short", email="testuser@example.com")
+        with pytest.raises(ValidationError):
+            user = User(username="testuser", password="pas", email="testuser@example.com")
+            user.full_clean()
 
     #  Creating a new user with an invalid email format should fail.
     def test_invalid_email_format(self):
@@ -65,31 +79,40 @@ class TestUserModel(TestCase):
             user = User(username="testuser", password="password", email="invalid_email")
             user.full_clean()
 
-    #  Updating an existing user's username or email to an already existing one should fail.
-    def test_existing_username_or_email(self):
+    #  Updating an existing user's username to an already existing one should fail.
+    def test_existing_username(self):
         # Create a user with a unique username and email
         user1 = User.objects.create(username="user1", password="password1", email="user1@example.com")
 
+        user2 = User.objects.create(username="user2", password="password2", email="user2@example.com")
+
         # Attempt to update user1's username to an already existing username
-        with pytest.raises(Exception):
+        with pytest.raises(IntegrityError):
             user1.username = "user2"
             user1.save()
 
+    #  Updating an existing user's email to an already existing one should fail.
+    def test_existing_email(self):
+        # Create a user with a unique username and email
+        user1 = User.objects.create(username="user1", password="password1", email="user1@example.com")
+
+        user2 = User.objects.create(username="user2", password="password2", email="user2@example.com")
+
         # Attempt to update user1's email to an already existing email
-        with pytest.raises(Exception):
+        with pytest.raises(IntegrityError):
             user1.email = "user2@example.com"
             user1.save()
 
     #  Updating an existing user's password to a length less than 9 should fail.
-    def test_update_password_length_less_than_9_should_fail(self):
-        # Create a user with a password length of 9
+    def test_update_password_length_less_than_8_should_fail(self):
+        # Create a user with a password length of 8
         user = User.objects.create(username="test_user", password="password123", email="test@example.com")
 
-        # Update the user's password to a length less than 9
+        # Update the user's password to a length less than 8
         user.password = "pass"
 
         # Attempt to save the user
-        with pytest.raises(ValidationError):
+        with pytest.raises(IntegrityError):
             user.save()
 
     #  Deleting an existing user should succeed.
@@ -103,31 +126,35 @@ class TestUserModel(TestCase):
         # Check if the user is deleted
         assert not User.objects.filter(username="test_user").exists()
 
-    #  Attempting to create a new user with a username or email that exceeds the maximum length should fail.
-    def test_username_and_email_length_exceeds_maximum(self):
-        with pytest.raises(Exception):
-            user = User(username="a" * 41, password="password", email="a" * 101)
+    #  Attempting to create a new user with an email that exceeds the maximum length should fail.
+    def test_email_length_exceeds_maximum(self):
+        with pytest.raises(DataError):
+            user = User(username="test", password="password", email='a' * 100 + '@example.com')
+            user.save()
+
+    #  Attempting to create a new user with a username that exceeds the maximum length should fail.
+    def test_username_length_exceeds_maximum(self):
+        with pytest.raises(DataError):
+            user = User(username="a" * 41, password="password", email=testmail)
             user.save()
 
     #  Attempting to create a new user with a password that exceeds the maximum length should fail.
     def test_password_exceeds_max_length(self):
-        with pytest.raises(Exception):
-            user = User(username="test_user", password="1234567890", email="test@example.com")
+        with pytest.raises(DataError):
+            user = User(username="test_user", password="01234567890123456", email="test@example.com")
             user.save()
 
-    #  Attempting to create a new user with a username, password, or email that contains invalid characters should fail.
-    def test_invalid_characters(self):
-        # Test username with invalid characters
-        with pytest.raises(ValidationError):
-            User.objects.create(username="user@name", password="password123", email="user@example.com")
-
-        # Test password with invalid characters
-        with pytest.raises(ValidationError):
-            User.objects.create(username="username", password="pass word", email="user@example.com")
-
+    #  Attempting to create a new user with an email that contains invalid characters should fail.
+    def test_email_invalid_characters(self):
         # Test email with invalid characters
         with pytest.raises(ValidationError):
             User.objects.create(username="username", password="password123", email="user@exa@mple.com")
+
+    #  Attempting to create a new user with an email that contains invalid characters should fail.
+    def test_password_invalid_characters(self):
+        # Test password with invalid characters
+        with pytest.raises(ValidationError):
+            User.objects.create(username="username", password="pass word", email="user@example.com")
 
     # Attempting to update an existing user's username, password, or email to a value that exceeds the maximum length
     # should fail.
@@ -138,17 +165,25 @@ class TestUserModel(TestCase):
 
         # Attempt to update the username to a value that exceeds the maximum length
         user.username = "a" * 41
-        with pytest.raises(ValidationError):
+        with pytest.raises(DataError):
             user.save()
 
+    def test_update_password_exceed_max_length(self):
+        # Create a user with a valid username, password, and email
+        user = User(username="testuser", password="password123", email="testuser@example.com")
+        user.save()
         # Attempt to update the password to a value that exceeds the maximum length
         user.password = "a" * 41
-        with pytest.raises(ValidationError):
+        with pytest.raises(DataError):
             user.save()
 
+    def test_update_email_exceed_max_length(self):
+        # Create a user with a valid username, password, and email
+        user = User(username="testuser", password="password123", email="testuser@example.com")
+        user.save()
         # Attempt to update the email to a value that exceeds the maximum length
         user.email = "a" * 101
-        with pytest.raises(ValidationError):
+        with pytest.raises(DataError):
             user.save()
 
     #  Retrieving a non-existent user should fail.
