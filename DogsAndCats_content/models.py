@@ -1,9 +1,7 @@
 from django.db import models
 from django.db.models.functions import Length
-from django.core.validators import MinLengthValidator, MaxLengthValidator
-from django.core.exceptions import ValidationError
+from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
 
-import re
 
 models.CharField.register_lookup(Length)
 models.EmailField.register_lookup(Length)
@@ -12,14 +10,12 @@ models.EmailField.register_lookup(Length)
 # The above class defines a User model with fields for username, password, and email.
 class User(models.Model):
     username = models.CharField(max_length=40, validators=[MinLengthValidator(1)], unique=True)
-    password = models.CharField(max_length=16, validators=[MinLengthValidator(8), MaxLengthValidator(16)])
-    email = models.EmailField(max_length=100, unique=True, validators=[MinLengthValidator(5)])
-
-    def clean(self):
-        if not re.match(r'^\b[a-zA-Z]+[a-zA-Z\d_.@!#$%^&*?-]*\b$', self.password):
-            raise ValidationError("Passwords cannot contain whitespace and brackets")
-        if not re.match(r'^\b[a-zA-Z]+[a-zA-Z\d_.-]*@[a-zA-Z]+\.[a-zA-Z]+\b$', self.email):
-            raise ValidationError("Email has to be a valid email address")
+    password = models.CharField(max_length=16, validators=[MinLengthValidator(8), MaxLengthValidator(16),
+                                                           RegexValidator(r'^\b[a-zA-Z]+[a-zA-Z\d_.@!#$%^&*?-]*\b$')])
+    email = models.EmailField(max_length=100,
+                              unique=True,
+                              validators=[MinLengthValidator(5),
+                                          RegexValidator(r'\b[a-zA-Z]+[a-zA-Z\d_.-]*@[a-zA-Z]+\.[a-zA-Z]+\b$')])
 
     class Meta:
         constraints = [
