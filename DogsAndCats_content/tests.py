@@ -148,13 +148,15 @@ class TestUserModel(TestCase):
     def test_email_invalid_characters(self):
         # Test email with invalid characters
         with pytest.raises(ValidationError):
-            User.objects.create(username="username", password="password123", email="user@exa@mple.com")
+            user = User(username="username", password="password123", email="user@exa@mple.com")
+            user.full_clean()
 
     #  Attempting to create a new user with an email that contains invalid characters should fail.
     def test_password_invalid_characters(self):
         # Test password with invalid characters
         with pytest.raises(ValidationError):
-            User.objects.create(username="username", password="pass word", email="user@example.com")
+            user = User(username="username", password="pass word", email="user@example.com")
+            user.full_clean()
 
     # Attempting to update an existing user's username, password, or email to a value that exceeds the maximum length
     # should fail.

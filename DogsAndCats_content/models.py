@@ -1,6 +1,9 @@
 from django.db import models
 from django.db.models.functions import Length
 from django.core.validators import MinLengthValidator, MaxLengthValidator
+from django.core.exceptions import ValidationError
+
+import re
 
 models.CharField.register_lookup(Length)
 models.EmailField.register_lookup(Length)
@@ -12,11 +15,11 @@ class User(models.Model):
     password = models.CharField(max_length=16, validators=[MinLengthValidator(8), MaxLengthValidator(16)])
     email = models.EmailField(max_length=100, unique=True, validators=[MinLengthValidator(5)])
 
-    # class Meta:
-    #     constraints = [
-    #         models.CheckConstraint(check=models.Q(question_text__length__gte=1), name="question_text_length"),
-    #         models.CheckConstraint(check=models.Q(exp_date__gte=models.F("pub_date")), name="Expiration date")
-    #     ]
+    def clean(self):
+        if not re.match(r'^\b[a-zA-Z]+[a-zA-Z\d_.@!#$%^&*?-]*\b$', self.password):
+            raise ValidationError("Passwords cannot contain whitespace and brackets")
+        if not re.match(r'^\b[a-zA-Z]+[a-zA-Z\d_.-]*@[a-zA-Z]+\.[a-zA-Z]+\b$', self.email):
+            raise ValidationError("Email has to be a valid email address")
 
     class Meta:
         constraints = [
