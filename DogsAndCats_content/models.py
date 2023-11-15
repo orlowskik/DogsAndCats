@@ -1,13 +1,13 @@
 from django.db import models
 from django.db.models.functions import Length
-from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
-
+from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator, MinValueValidator
 
 models.CharField.register_lookup(Length)
 models.EmailField.register_lookup(Length)
 
 
-# The above class defines a User model with fields for username, password, and email.
+# The above class defines a User model with fields for username, password, and email, along with validation rules and
+# constraints.
 class User(models.Model):
     username = models.CharField(max_length=40, validators=[MinLengthValidator(1)], unique=True)
     password = models.CharField(max_length=16, validators=[MinLengthValidator(8), MaxLengthValidator(16),
@@ -33,10 +33,14 @@ class User(models.Model):
 
 # The Pet class represents a pet with attributes such as name, breed, age, color, description, and owner.
 class Pet(models.Model):
+    class KindChoices(models.TextChoices):
+        Cat = 'Cat', 'Cat'
+        Dog = 'Dog', 'Dog'
+
     name = models.CharField(max_length=20, validators=[MinLengthValidator(1)])
-    kind = models.TextChoices(names=('Cat', 'Dog'), value='Dog')
+    kind = models.CharField(max_length=10, choices=KindChoices.choices, default=KindChoices.Dog)
     breed = models.CharField(max_length=40, default="")
-    age = models.IntegerField(default=0)
+    age = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     color = models.CharField(max_length=40, default="")
     description = models.CharField(max_length=200, default='')
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
