@@ -31,19 +31,36 @@ class User(models.Model):
         return self.username
 
 
+class KindChoices(models.TextChoices):
+    Cat = 'Cat', 'Cat'
+    Dog = 'Dog', 'Dog'
+
+
 # The Pet class represents a pet with attributes such as name, breed, age, color, description, and owner.
 class Pet(models.Model):
-    class KindChoices(models.TextChoices):
-        Cat = 'Cat', 'Cat'
-        Dog = 'Dog', 'Dog'
-
     name = models.CharField(max_length=20, validators=[MinLengthValidator(1)])
     kind = models.CharField(max_length=10, choices=KindChoices.choices, default=KindChoices.Dog)
-    breed = models.CharField(max_length=40, default="")
+    breed = models.CharField(max_length=40, default="Unknown",)
     age = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    color = models.CharField(max_length=40, default="")
-    description = models.CharField(max_length=200, default='')
+    color = models.CharField(max_length=40, default="Unknown",)
+    description = models.CharField(max_length=200, default='Not given')
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(check=models.Q(name__length__gte=1),
+                                   name="Name must be at least 1 character"),
+            models.CheckConstraint(check=models.Q(breed__length__gte=1),
+                                   name="Breed must be at least 1 character"),
+            models.CheckConstraint(check=models.Q(age__gte=0),
+                                   name="Age must be positive"),
+            models.CheckConstraint(check=models.Q(color__length__gte=1),
+                                   name="Color must be at least 1 character"),
+            models.CheckConstraint(check=models.Q(description__length__gte=1),
+                                   name="Description must be at least 1 character"),
+            models.UniqueConstraint(fields=['name', 'owner'],
+                                    name='Unique name and owner for a pet')
+            ]

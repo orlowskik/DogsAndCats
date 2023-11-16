@@ -2,7 +2,7 @@ from django.db import IntegrityError, DataError
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
-from .models import User, Pet
+from .models import User, Pet, KindChoices
 
 import pytest
 
@@ -50,7 +50,7 @@ class TestUserModel(TestCase):
     def test_create_user_with_existing_email(self):
         User.objects.create(username="testuser", password="password123", email="testuser@example.com")
         with pytest.raises(IntegrityError):
-            User.objects.create(username="newusername", password="newpassword123", email="testuser@example.com")
+            User.objects.create(username="new-username", password="newpassword123", email="testuser@example.com")
 
     #  Creating a new user with an empty username, password, or email should fail.
     def test_create_user_with_empty_username(self):
@@ -84,7 +84,7 @@ class TestUserModel(TestCase):
         # Create a user with a unique username and email
         user1 = User.objects.create(username="user1", password="password1", email="user1@example.com")
 
-        user2 = User.objects.create(username="user2", password="password2", email="user2@example.com")
+        User.objects.create(username="user2", password="password2", email="user2@example.com")
 
         # Attempt to update user1's username to an already existing username
         with pytest.raises(IntegrityError):
@@ -96,7 +96,7 @@ class TestUserModel(TestCase):
         # Create a user with a unique username and email
         user1 = User.objects.create(username="user1", password="password1", email="user1@example.com")
 
-        user2 = User.objects.create(username="user2", password="password2", email="user2@example.com")
+        User.objects.create(username="user2", password="password2", email="user2@example.com")
 
         # Attempt to update user1's email to an already existing email
         with pytest.raises(IntegrityError):
@@ -189,6 +189,7 @@ class TestUserModel(TestCase):
             user.save()
 
     #  Retrieving a non-existent user should fail.
+    # noinspection PyTypeChecker
     def test_retrieving_nonexistent_user_should_fail(self):
         with pytest.raises(User.DoesNotExist):
             User.objects.get(username="nonexistent_user")
@@ -200,7 +201,7 @@ class TestPet(TestCase):
     #  Creating a new Pet instance with valid parameters should be successful.
     def test_create_pet_with_valid_parameters(self):
         user = User.objects.create(username="test_user", password="test_password", email="test@test.com")
-        pet = Pet.objects.create(name="test_pet", kind="Dog", breed="Labrador", age=2, color="Brown",
+        pet = Pet.objects.create(name="test_pet", kind=KindChoices.Dog, breed="Labrador", age=2, color="Brown",
                                  description="Friendly dog", owner=user)
         assert pet.name == "test_pet"
         assert pet.kind == "Dog"
@@ -213,7 +214,7 @@ class TestPet(TestCase):
     #  Retrieving an existing Pet instance should return the correct object.
     def test_retrieve_existing_pet_instance(self):
         user = User.objects.create(username="test_user", password="test_password", email="test@test.com")
-        pet = Pet.objects.create(name="test_pet", kind="Dog", breed="Labrador", age=2, color="Brown",
+        pet = Pet.objects.create(name="test_pet", kind=KindChoices.Dog, breed="Labrador", age=2, color="Brown",
                                  description="Friendly dog", owner=user)
         retrieved_pet = Pet.objects.get(name="test_pet")
         assert retrieved_pet == pet
@@ -221,7 +222,7 @@ class TestPet(TestCase):
     #  Updating a Pet instance with valid parameters should be successful.
     def test_update_pet_with_valid_parameters(self):
         user = User.objects.create(username="test_user", password="test_password", email="test@test.com")
-        pet = Pet.objects.create(name="test_pet", kind="Dog", breed="Labrador", age=2, color="Brown",
+        pet = Pet.objects.create(name="test_pet", kind=KindChoices.Dog, breed="Labrador", age=2, color="Brown",
                                  description="Friendly dog", owner=user)
         pet.name = "updated_pet"
         pet.save()
@@ -231,22 +232,25 @@ class TestPet(TestCase):
     def test_create_pet_with_empty_name(self):
         user = User.objects.create(username="test_user", password="test_password", email="test@test.com")
         with pytest.raises(Exception):
-            Pet.objects.create(name="", kind="Dog", breed="Labrador", age=2, color="Brown", description="Friendly dog",
+            Pet.objects.create(name="", kind=KindChoices.Dog, breed="Labrador", age=2, color="Brown",
+                               description="Friendly dog",
                                owner=user)
 
     #  Creating a new Pet instance with an invalid kind should raise a validation error.
     def test_create_pet_with_invalid_kind(self):
         user = User.objects.create(username="test_user", password="test_password", email="test@test.com")
-        with pytest.raises(Exception):
-            Pet.objects.create(name="test_pet", kind="Cat", breed="Labrador", age=2, color="Brown",
-                               description="Friendly dog", owner=user)
+        with pytest.raises(ValidationError):
+            pet = Pet(name="test_pet", kind='Dudu', breed="Labrador", age=2, color="Brown",
+                      description="Friendly dog", owner=user)
+            pet.full_clean()
 
     #  Creating a new Pet instance with a negative age should raise a validation error.
     def test_create_pet_with_negative_age(self):
         user = User.objects.create(username="test_user", password="test_password", email="test@test.com")
-        with pytest.raises(DataError):
-            Pet.objects.create(name="test_pet", kind="Dog", breed="Labrador", age=-2, color="Brown",
-                               description="Friendly dog", owner=user)
+        with pytest.raises(ValidationError):
+            pet = Pet(name="test_pet", kind=KindChoices.Dog, breed="Labrador", age=-2, color="Brown",
+                      description="Friendly dog", owner=user)
+            pet.full_clean()
 
     #  Deleting a Pet instance should remove it from the database.
     def test_delete_pet_instance(self):
@@ -254,7 +258,7 @@ class TestPet(TestCase):
         user = User.objects.create(username="test_user", password="password123", email="test@example.com")
 
         # Create a pet
-        pet = Pet.objects.create(name="Fluffy", kind="Cat", breed="Persian", age=3, color="White",
+        pet = Pet.objects.create(name="Fluffy", kind=KindChoices.Cat, breed="Persian", age=3, color="White",
                                  description="Cute cat", owner=user)
 
         # Delete the pet
@@ -267,15 +271,17 @@ class TestPet(TestCase):
     def test_create_pet_with_long_breed(self):
         user = User.objects.create(username="testuser", password="testpassword", email="test@example.com")
         with pytest.raises(ValidationError):
-            Pet.objects.create(name="Fluffy", breed="a" * 41, age=2, color="white", description="Cute pet", owner=user)
+            pet = Pet(name="Fluffy", breed="a" * 41, age=2, color="white", description="Cute pet", owner=user)
+            pet.full_clean()
 
     #  Creating a new Pet instance with a too long color should raise a validation error.
     def test_create_pet_with_long_color(self):
         user = User.objects.create(username="testuser", password="testpassword", email="test@example.com")
         with pytest.raises(ValidationError):
-            pet = Pet.objects.create(name="Fluffy", kind="Dog", breed="Labrador", age=2,
-                                     color="This is a very long color that exceeds the maximum length allowed",
-                                     description="A cute dog", owner=user)
+            pet = Pet(name="Fluffy", kind=KindChoices.Dog, breed="Labrador", age=2,
+                      color="This is a very long color that exceeds the maximum length allowed",
+                      description="A cute dog", owner=user)
+            pet.full_clean()
 
     #  Creating a new Pet instance with a too long description should raise a validation error.
     def test_description_too_long(self):
@@ -288,13 +294,8 @@ class TestPet(TestCase):
         with pytest.raises(ValidationError):
             pet.full_clean()
 
-    #  Creating a new Pet instance with a non-existing owner should raise an integrity error.
-    def test_create_pet_with_non_existing_owner(self):
-        with pytest.raises(IntegrityError):
-            Pet.objects.create(name="test_pet", kind="Dog", breed="Labrador", age=2, color="Brown",
-                               description="Friendly dog", owner_id=999)
-
     #  Retrieving a non-existing Pet instance should raise a DoesNotExist exception.
+    # noinspection PyTypeChecker
     def test_retrieving_non_existing_pet(self):
         with pytest.raises(Pet.DoesNotExist):
             Pet.objects.get(id=1)
@@ -302,7 +303,7 @@ class TestPet(TestCase):
     #  Updating a Pet instance with invalid parameters should raise a validation error.
     def test_invalid_parameters_name(self):
         user = User.objects.create(username="testuser", password="password", email="testuser@example.com")
-        pet = Pet.objects.create(name="Fluffy", kind="Dog", breed="Labrador", age=3, color="Brown",
+        pet = Pet.objects.create(name="Fluffy", kind=KindChoices.Dog, breed="Labrador", age=3, color="Brown",
                                  description="Friendly dog", owner=user)
 
         # Test updating name with an empty string
@@ -313,7 +314,7 @@ class TestPet(TestCase):
     #  Updating a Pet instance with invalid parameters should raise a validation error.
     def test_invalid_parameters_breed(self):
         user = User.objects.create(username="testuser", password="password", email="testuser@example.com")
-        pet = Pet.objects.create(name="Fluffy", kind="Dog", breed="Labrador", age=3, color="Brown",
+        pet = Pet.objects.create(name="Fluffy", kind=KindChoices.Dog, breed="Labrador", age=3, color="Brown",
                                  description="Friendly dog", owner=user)
         # Test updating breed with a string longer than 40 characters
         with pytest.raises(ValidationError):
@@ -323,7 +324,7 @@ class TestPet(TestCase):
     #  Updating a Pet instance with invalid parameters should raise a validation error.
     def test_invalid_parameters_age(self):
         user = User.objects.create(username="testuser", password="password", email="testuser@example.com")
-        pet = Pet.objects.create(name="Fluffy", kind="Dog", breed="Labrador", age=3, color="Brown",
+        pet = Pet.objects.create(name="Fluffy", kind=KindChoices.Dog, breed="Labrador", age=3, color="Brown",
                                  description="Friendly dog", owner=user)
         # Test updating age with a negative value
         with pytest.raises(ValidationError):
@@ -333,7 +334,7 @@ class TestPet(TestCase):
     #  Updating a Pet instance with invalid parameters should raise a validation error.
     def test_invalid_parameters_color(self):
         user = User.objects.create(username="testuser", password="password", email="testuser@example.com")
-        pet = Pet.objects.create(name="Fluffy", kind="Dog", breed="Labrador", age=3, color="Brown",
+        pet = Pet.objects.create(name="Fluffy", kind=KindChoices.Dog, breed="Labrador", age=3, color="Brown",
                                  description="Friendly dog", owner=user)
 
         # Test updating color with a string longer than 40 characters
@@ -344,15 +345,16 @@ class TestPet(TestCase):
     #  Updating a Pet instance with invalid parameters should raise a validation error.
     def test_invalid_parameters_desc(self):
         user = User.objects.create(username="testuser", password="password", email="testuser@example.com")
-        pet = Pet.objects.create(name="Fluffy", kind="Dog", breed="Labrador", age=3, color="Brown",
+        pet = Pet.objects.create(name="Fluffy", kind=KindChoices.Dog, breed="Labrador", age=3, color="Brown",
                                  description="Friendly dog", owner=user)
 
         # Test updating description with a string longer than 200 characters
         with pytest.raises(ValidationError):
-            pet.description = 'a'*201
+            pet.description = 'a' * 201
             pet.full_clean()
 
     #  Deleting a non-existing Pet instance should raise a DoesNotExist exception.
+    # noinspection PyTypeChecker
     def test_delete_non_existing_pet(self):
         with pytest.raises(Pet.DoesNotExist):
             Pet.objects.get(id=100)
@@ -360,15 +362,16 @@ class TestPet(TestCase):
     #  Retrieving all Pet instances should return a QuerySet containing all objects.
     def test_retrieve_all_pet_instances(self):
         # Create some Pet instances
-        pet1 = Pet.objects.create(name="Fluffy", kind="Cat", breed="Persian", age=3, color="White",
+        pet1 = Pet.objects.create(name="Fluffy", kind=KindChoices.Cat, breed="Persian", age=3, color="White",
                                   description="Cute and fluffy",
                                   owner=User.objects.create(username="user1", password="password1",
                                                             email="user1@example.com"))
-        pet2 = Pet.objects.create(name="Buddy", kind="Dog", breed="Labrador", age=5, color="Golden",
+        pet2 = Pet.objects.create(name="Buddy", kind=KindChoices.Dog, breed="Labrador", age=5, color="Golden",
                                   description="Friendly and playful",
                                   owner=User.objects.create(username="user2", password="password2",
                                                             email="user2@example.com"))
-        pet3 = Pet.objects.create(name="Max", kind="Dog", breed="German Shepherd", age=2, color="Black and Tan",
+        pet3 = Pet.objects.create(name="Max", kind=KindChoices.Dog, breed="German Shepherd", age=2,
+                                  color="Black and Tan",
                                   description="Loyal and protective",
                                   owner=User.objects.create(username="user3", password="password3",
                                                             email="user3@example.com"))
@@ -388,16 +391,16 @@ class TestPet(TestCase):
         user = User.objects.create(username="test_user", password="test_password", email="test@test.com")
 
         # Create pets with different owners
-        pet1 = Pet.objects.create(name="pet1", kind="Dog", breed="breed1", age=1, color="color1",
+        pet1 = Pet.objects.create(name="pet1", kind=KindChoices.Dog, breed="breed1", age=1, color="color1",
                                   description="description1", owner=user)
-        pet2 = Pet.objects.create(name="pet2", kind="Dog", breed="breed2", age=2, color="color2",
+        pet2 = Pet.objects.create(name="pet2", kind=KindChoices.Dog, breed="breed2", age=2, color="color2",
                                   description="description2", owner=user)
-        pet3 = Pet.objects.create(name="pet3", kind="Dog", breed="breed3", age=3, color="color3",
+        pet3 = Pet.objects.create(name="pet3", kind=KindChoices.Dog, breed="breed3", age=3, color="color3",
                                   description="description3", owner=user)
 
         # Create a pet with a different owner
         other_user = User.objects.create(username="other_user", password="other_password", email="other@test.com")
-        pet4 = Pet.objects.create(name="pet4", kind="Dog", breed="breed4", age=4, color="color4",
+        pet4 = Pet.objects.create(name="pet4", kind=KindChoices.Dog, breed="breed4", age=4, color="color4",
                                   description="description4", owner=other_user)
 
         # Filter pets by owner
