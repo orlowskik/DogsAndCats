@@ -1,7 +1,9 @@
 from django.urls import path
-from DogsAndCats_content.views import IndexView
+
+from . import views
 
 
 urlpatterns = [
-    path('', IndexView),
+    path('', views.IndexView.as_view(), name='index'),
+
 ]

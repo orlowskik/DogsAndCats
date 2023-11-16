@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <title>DogsAndCats</title>
+    {% load static %}
 </head>
 <body>
-    <h1>DogsAndCats</h1>
-    <h2>Dogs</h2>
-{#    <ul>#}
-{#        @foreach($dogs as $dog)#}
-{#            <li>{{ $dog->name }}</li>#}
-{#        @endforeach#}
-{#    </ul>#}
-    <h2>Cats</h2>
-{#    <ul>#}
-{#        @foreach($cats as $cat)#}
-{#            <li>{{ $cat->name }}</li>#}
-{#        @endforeach#}
-{#    </ul>#}
+    <fieldset>
+        <legend><h1>Dogs and Cats</h1></legend>
+        {% if dogs_and_cats %}
+                {% for pet in dogs_and_cats %}
+{#                    <a href="{% url 'DogsAndCats_content:detail' pet.id %}">#}
+                        <button type="button" class="pet">{{ pet.name }}</button>
+{#                    </a>#}
+                    <br><br>
+                {% endfor %}
+        {% else %}
+            <p>No pets are available</p>
+        {% endif %}
+    </fieldset>
 </body>
 </html>
