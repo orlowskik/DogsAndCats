@@ -4,20 +4,52 @@
     <meta charset="UTF-8">
     <title>DogsAndCats</title>
     {% load static %}
+
+    <link rel="stylesheet" href="{% static 'DogsAndCats_content/home.css' %}" type="text/css" />
 </head>
 <body>
-    <fieldset>
-        <legend><h1>Dogs and Cats</h1></legend>
-        {% if dogs_and_cats %}
-                {% for pet in dogs_and_cats %}
-{#                    <a href="{% url 'DogsAndCats_content:detail' pet.id %}">#}
-                        <button type="button" class="pet">{{ pet.name }}</button>
-{#                    </a>#}
-                    <br><br>
-                {% endfor %}
-        {% else %}
-            <p>No pets are available</p>
-        {% endif %}
-    </fieldset>
+    <div class="menu">
+        <button type="button" class="menu_button" id="first_button">Pets</button>
+        <button type="button" class="menu_button">Blog</button>
+        <button type="button" class="menu_button">FAQ</button>
+        <button type="button" class="menu_button" id="last_button">Login</button>
+    </div>
+    <div class="wrapper">
+        <div class="table">
+            <form action="{% static 'DogsAndCats_' %}" method="post" >
+                {% if kinds %}
+                    <label for="kind">Kind:</label>
+                    <select id="kind" name="kind">
+                        {% for kind in kinds %}
+                            <option value="{{ kind.kind }}">{{ kind.kind }}</option>
+                        {%  endfor %}
+                    </select>
+                {% else %}
+                        <p>There are no kinds available</p>
+                {% endif %}
+            <br>
+                <button type="button" class="table_button">Blog</button><br>
+                <button type="button" class="table_button">FAQ</button><br>
+                <button type="button" class="table_button">Login</button><br>
+            </form>
+
+        </div>
+        <div class="list">
+            <legend><h1>Dogs and Cats</h1></legend>
+            {% if pets %}
+                    {% for pet in pets %}
+        {#                    <a href="{% url 'DogsAndCats_content:detail' pet.id %}">#}
+                            <button type="button" class="pet">{{ pet.name }}</button>
+        {#                    </a>#}
+                        <br><br>
+                    {% endfor %}
+            {% else %}
+                <p>No pets are available</p>
+            {% endif %}
+        </div>
+    </div>
+
+
+
 </body>
 </html>
