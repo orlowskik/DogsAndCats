@@ -1,7 +1,7 @@
 body{
     margin: 0 !important;
     padding: 0 !important;
-    background-color: rgba(220, 214, 195, 0.68)
+    background-color: rgb(231, 229, 229)
 
 }
 
@@ -35,15 +35,15 @@ body{
 }
 
 .wrapper{
+    padding: 0 !important;
     margin-left: 1%;
-    margin-top: 1%;
     overflow: hidden;
-    width: 80%;
+    width: 95%;
 }
 
 .table{
     background-color: rgba(172, 180, 180, 0.21);
-    width: 25%;
+    width: 20%;
     float: left;
     border: 1px solid black;
     border-radius: 8px;
@@ -51,7 +51,24 @@ body{
 }
 
 .list{
+
     background-color: antiquewhite;
     width: 70%;
     float: right;
+    border: 1px solid;
+    border-radius: 8px;
 }
+
+select:required:invalid{
+    color: gray;
+}
+option[value=""][disabled]{
+    display: none;
+}
+option{
+    color: black;
+    width: 50%;
+}
+
+
+
