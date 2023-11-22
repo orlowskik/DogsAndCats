@@ -41,29 +41,35 @@
                 </select>
                 <br>
                 <label for="colors">Colors:</label>
-                <div class="colors" id="colors">
-
-                </div>
-
+                <div class="colors" id="colors"></div>
             </form>
-
         </fieldset>
         <fieldset class="list">
             <legend><h1>Dogs and Cats</h1></legend>
             {% if pets %}
                     {% for pet in pets %}
-        {#                    <a href="{% url 'DogsAndCats_content:detail' pet.id %}">#}
-                            <button type="button" class="pet">{{ pet.name }}</button>
-        {#                    </a>#}
-                        <br><br>
+                        <div id="{{ pet.id }}" class="pet">
+                            <div class="left_menu">
+                                <img src="{% static 'DogsAndCats_content/placeholder.png ' %}" class="pet-image" alt="No pictures available"/><br>
+                                <h4>{{ pet.name }}</h4>
+
+                            </div>
+                            <div class="right_menu">
+                                <p class="features">
+                                    <b>Breed: </b><i>{{ pet.breed }}</i><br>
+                                    <b>Age: </b><i>{{ pet.age }}</i><br>
+                                    <b>Color: </b><i>{{ pet.color }}</i><br>
+                                    <b>Description:</b>
+                                </p>
+                                <p class="description">{{ pet.description }}</p>
+                            </div>
+                        </div>
+                        <br>
                     {% endfor %}
             {% else %}
                 <p>No pets are available</p>
             {% endif %}
         </fieldset>
     </div>
-
-
-
 </body>
 </html>
