@@ -47,7 +47,6 @@ body{
     float: left;
     border: 1px solid black;
     border-radius: 8px;
-
 }
 
 .list{
@@ -70,5 +69,9 @@ option{
     width: 50%;
 }
 
-
+select{
+    padding: 1%;
+    margin-top: 1%;
+    margin-bottom: 1%;
+}
 

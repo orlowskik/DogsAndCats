@@ -25,5 +25,11 @@ def get_breeds(request):
     return JsonResponse(data)
 
 
-
+def get_colors(request):
+    result = request.POST.get('result', None)
+    colors = Pet.objects.filter(kind=result).values('color').distinct()
+    data = {}
+    for color in colors:
+        data[color["color"]] = color["color"]
+    return JsonResponse(data)
 
