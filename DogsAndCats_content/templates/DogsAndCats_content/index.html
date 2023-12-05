@@ -21,12 +21,12 @@
     <div class="wrapper">
         <fieldset class="table">
             <legend><h1>Search</h1></legend>
-            <form action="{% static 'DogsAndCats_' %}" method="post" >
-
+            <form action="{% url 'DogsAndCats_content:search' %}" method="post" >
+                {% csrf_token %}
                 {% if kinds %}
                     <label for="kind">Kind:</label><br>
                     <select id="kind" name="kind" onchange="set_searches()">
-                        <option value="" selected disabled>Select kind...</option>
+                        <option value="All" selected disabled>Select kind...</option>
                         {% for kind in kinds %}
                             <option value="{{ kind.kind }}">{{ kind.kind }}</option>
                         {%  endfor %}
@@ -37,11 +37,13 @@
                 <br>
                 <label for="breed">Breed:</label><br>
                 <select id="breed" name="breed" disabled>
-                    <option value="" selected disabled>Select breed...</option>
+                    <option value="All" selected disabled>Select breed...</option>
                 </select>
                 <br>
                 <label for="colors">Colors:</label>
                 <div class="colors" id="colors"></div>
+                <hr/>
+                <button type="submit" id="submit" class="btn btn-primary">Search</button>
             </form>
         </fieldset>
         <fieldset class="list">

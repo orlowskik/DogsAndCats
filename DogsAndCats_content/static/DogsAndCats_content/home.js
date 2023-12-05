@@ -3,12 +3,6 @@ function set_searches(){
     get_colors()
 }
 
-
-
-
-
-
-
 function get_breed() {
     let kind = document.getElementById("kind").value
     if (kind !== ""){
@@ -22,7 +16,12 @@ function get_breed() {
             dataType: "json",
             success: function (data) {
                 let breeds = document.getElementById('breed')
+                let placeholder = document.createElement("option")
                 breeds.options.length = 0
+                placeholder.value = "All"
+                placeholder.text = "All"
+                placeholder.selected = true
+                breeds.add(placeholder)
                 Object.keys(data).forEach(
                     function (key) {
                         let option = document.createElement("option")
